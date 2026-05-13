@@ -1,8 +1,18 @@
 # import-specifier-scan-kit
 
+[![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue.svg)](LICENSE)
+[![CI](https://github.com/Recoveredd/import-specifier-scan-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Recoveredd/import-specifier-scan-kit/actions/workflows/ci.yml)
+
 Scan JavaScript source text for literal module specifiers from `import`, `export ... from`, dynamic `import()`, and `require()` calls.
 
 It is intentionally small: no AST, no runtime dependencies, no Node-only APIs, and no attempt to evaluate JavaScript. Use it when you need a quick browser-friendly dependency hint with spans and diagnostics.
+
+## Package quality
+
+- TypeScript types are generated from the source.
+- ESM-only package marked as side-effect free for bundlers.
+- CI runs `npm ci`, `typecheck`, `build`, and `test`.
+- Tested on Node.js 20 and 22 with GitHub Actions.
 
 ## Demo
 
