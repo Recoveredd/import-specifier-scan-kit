@@ -1,0 +1,108 @@
+import { describe, expect, it } from "vitest";
+import {
+  hasImportSpecifier,
+  listImportSpecifiers,
+  scanImportSpecifiers
+} from "../src/index.js";
+
+describe("scanImportSpecifiers", () => {
+  it("extracts static, side-effect, export, dynamic, and require specifiers", () => {
+    const source = `
+      import defaultExport from "alpha";
+      import { named } from './beta.js';
+      import "side-effect.css";
+      export { thing } from "@scope/pkg";
+      const lazy = import("lazy-module");
+      const cjs = require('legacy');
+    `;
+
+    const result = scanImportSpecifiers(source);
+
+    expect(result.issues).toEqual([]);
+    expect(result.specifiers.map((match) => [match.kind, match.specifier])).toEqual([
+      ["static-import", "alpha"],
+      ["static-import", "./beta.js"],
+      ["side-effect-import", "side-effect.css"],
+      ["export-from", "@scope/pkg"],
+      ["dynamic-import", "lazy-module"],
+      ["require", "legacy"]
+    ]);
+    expect(result.specifiers[0]?.specifierStart).toBe(source.indexOf("alpha"));
+  });
+
+  it("ignores comments and ordinary strings", () => {
+    const source = `
+      // import fake from "commented";
+      const text = "require('not-real')";
+      /* export * from "also-commented"; */
+      import ok from "real";
+    `;
+
+    expect(listImportSpecifiers(source)).toEqual(["real"]);
+  });
+
+  it("can disable require, dynamic import, and export scanning", () => {
+    const result = scanImportSpecifiers(
+      `export { x } from "x"; import("y"); require("z"); import a from "a";`,
+      {
+        includeExports: false,
+        includeDynamicImports: false,
+        includeRequires: false
+      }
+    );
+
+    expect(result.specifiers.map((match) => match.specifier)).toEqual(["a"]);
+  });
+
+  it("supports multiline imports and import attributes", () => {
+    const source = `
+      import {
+        readFile,
+        writeFile
+      } from "node:fs/promises";
+
+      import data from "./data.json" with { type: "json" };
+    `;
+
+    expect(listImportSpecifiers(source)).toEqual(["node:fs/promises", "./data.json"]);
+  });
+
+  it("reports nonliteral dynamic import and require arguments", () => {
+    const result = scanImportSpecifiers(`
+      import(name);
+      require(packageName);
+    `);
+
+    expect(result.specifiers).toEqual([]);
+    expect(result.issues.map((issue) => issue.code)).toEqual([
+      "nonliteral-dynamic-import",
+      "nonliteral-require"
+    ]);
+  });
+
+  it("handles escaped characters and scoped package names", () => {
+    const result = scanImportSpecifiers(`import value from "@scope/pkg\\\"name";`);
+
+    expect(result.specifiers[0]?.specifier).toBe('@scope/pkg"name');
+    expect(result.specifiers[0]?.quote).toBe("\"");
+  });
+
+  it("returns an issue instead of scanning oversized input", () => {
+    const result = scanImportSpecifiers("import x from 'x';", { maxLength: 5 });
+
+    expect(result.specifiers).toEqual([]);
+    expect(result.issues).toEqual([
+      {
+        code: "input-too-large",
+        message: "Input length 18 exceeds maxLength 5.",
+        start: 5,
+        end: 18
+      }
+    ]);
+  });
+
+  it("exposes a direct presence helper", () => {
+    expect(hasImportSpecifier(`import x from "x";`, "x")).toBe(true);
+    expect(hasImportSpecifier(`import x from "x";`, "missing")).toBe(false);
+  });
+});

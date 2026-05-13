@@ -1,0 +1,89 @@
+# import-specifier-scan-kit
+
+Scan JavaScript source text for literal module specifiers from `import`, `export ... from`, dynamic `import()`, and `require()` calls.
+
+It is intentionally small: no AST, no runtime dependencies, no Node-only APIs, and no attempt to evaluate JavaScript. Use it when you need a quick browser-friendly dependency hint with spans and diagnostics.
+
+## Install
+
+```bash
+npm install import-specifier-scan-kit
+```
+
+## Usage
+
+```ts
+import { scanImportSpecifiers } from "import-specifier-scan-kit";
+
+const result = scanImportSpecifiers(`
+  import read from "read-pkg";
+  import "./setup.css";
+  export { helper } from "@acme/tools";
+  const view = await import("./view.js");
+  const legacy = require("legacy-package");
+`);
+
+console.log(result.specifiers);
+// [
+//   { kind: "static-import", specifier: "read-pkg", ... },
+//   { kind: "side-effect-import", specifier: "./setup.css", ... },
+//   { kind: "export-from", specifier: "@acme/tools", ... },
+//   { kind: "dynamic-import", specifier: "./view.js", ... },
+//   { kind: "require", specifier: "legacy-package", ... }
+// ]
+```
+
+Each match includes:
+
+- `kind`: the syntax family that produced the match.
+- `specifier`: the unquoted module specifier.
+- `start` and `end`: source offsets for the scanned statement fragment.
+- `specifierStart` and `specifierEnd`: source offsets for the literal value.
+- `raw`: the matched source fragment.
+
+## Helpers
+
+```ts
+import {
+  hasImportSpecifier,
+  listImportSpecifiers,
+  scanImportSpecifiers
+} from "import-specifier-scan-kit";
+
+listImportSpecifiers(`import x from "x";`);
+// ["x"]
+
+hasImportSpecifier(`const x = require("pkg");`, "pkg");
+// true
+
+scanImportSpecifiers(source, {
+  includeRequires: false,
+  includeDynamicImports: true,
+  includeExports: true,
+  maxLength: 200_000
+});
+```
+
+## Diagnostics
+
+The scanner does not throw for expected source-shape problems. It returns issues such as:
+
+- `input-too-large`
+- `unterminated-string`
+- `template-expression-skipped`
+- `nonliteral-dynamic-import`
+- `nonliteral-require`
+
+## Browser-Friendly
+
+The core uses only strings, arrays, objects, regular expressions, and numbers. It does not require `fs`, `path`, `Buffer`, `process`, native modules, or network access.
+
+Multi-line import declarations, side-effect imports, `export ... from`, literal dynamic `import()`, and literal `require()` calls are supported. Non-literal calls are reported as diagnostics.
+
+## Limits
+
+This package is not a JavaScript parser. It is best for lint hints, previews, search tools, editor helpers, browser demos, and quick dependency summaries. For bundlers, transpilers, or code that must understand every JavaScript syntax edge case, use a parser or lexer such as `es-module-lexer`, Babel, Acorn, or SWC.
+
+## License
+
+MPL-2.0

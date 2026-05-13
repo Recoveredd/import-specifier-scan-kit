@@ -1,0 +1,47 @@
+{
+  "name": "import-specifier-scan-kit",
+  "version": "0.1.0",
+  "description": "Scan JavaScript import and require specifiers with spans and lightweight diagnostics.",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MPL-2.0",
+  "author": "Recoveredd",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Recoveredd/import-specifier-scan-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Recoveredd/import-specifier-scan-kit/issues"
+  },
+  "homepage": "https://github.com/Recoveredd/import-specifier-scan-kit#readme",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.24",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}
