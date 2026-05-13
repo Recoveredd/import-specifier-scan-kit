@@ -4,6 +4,10 @@ Scan JavaScript source text for literal module specifiers from `import`, `export
 
 It is intentionally small: no AST, no runtime dependencies, no Node-only APIs, and no attempt to evaluate JavaScript. Use it when you need a quick browser-friendly dependency hint with spans and diagnostics.
 
+## Demo
+
+[Try the interactive demo](https://packages.wasta-wocket.fr/import-specifier-scan-kit/)
+
 ## Install
 
 ```bash
