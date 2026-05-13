@@ -74,7 +74,7 @@ The scanner does not throw for expected source-shape problems. It returns issues
 - `nonliteral-dynamic-import`
 - `nonliteral-require`
 
-## Browser-Friendly
+## Browser compatibility
 
 The core uses only strings, arrays, objects, regular expressions, and numbers. It does not require `fs`, `path`, `Buffer`, `process`, native modules, or network access.
 
@@ -83,6 +83,12 @@ Multi-line import declarations, side-effect imports, `export ... from`, literal 
 ## Limits
 
 This package is not a JavaScript parser. It is best for lint hints, previews, search tools, editor helpers, browser demos, and quick dependency summaries. For bundlers, transpilers, or code that must understand every JavaScript syntax edge case, use a parser or lexer such as `es-module-lexer`, Babel, Acorn, or SWC.
+
+## CLI
+
+No CLI is included. The scanner is browser-friendly by design and works best as
+a small function inside dependency previews, editors, docs tools, and internal
+automation scripts.
 
 ## License
 
