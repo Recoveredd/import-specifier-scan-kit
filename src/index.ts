@@ -44,6 +44,10 @@ export interface ScanImportSpecifiersResult {
   readonly issues: readonly ImportSpecifierIssue[];
 }
 
+export interface ListPackageSpecifiersOptions extends ScanImportSpecifiersOptions {
+  readonly includeNodeBuiltins?: boolean;
+}
+
 interface ScanState {
   readonly source: string;
   readonly options: Required<ScanImportSpecifiersOptions>;
@@ -59,6 +63,42 @@ const DEFAULT_OPTIONS: Required<ScanImportSpecifiersOptions> = {
 };
 
 const IDENTIFIER = /[A-Za-z0-9_$]/;
+const NODE_BUILTINS = new Set([
+  "assert",
+  "buffer",
+  "child_process",
+  "cluster",
+  "console",
+  "crypto",
+  "dgram",
+  "dns",
+  "domain",
+  "events",
+  "fs",
+  "http",
+  "http2",
+  "https",
+  "module",
+  "net",
+  "os",
+  "path",
+  "perf_hooks",
+  "process",
+  "punycode",
+  "querystring",
+  "readline",
+  "stream",
+  "string_decoder",
+  "timers",
+  "tls",
+  "tty",
+  "url",
+  "util",
+  "v8",
+  "vm",
+  "worker_threads",
+  "zlib"
+]);
 
 export function scanImportSpecifiers(
   source: string,
@@ -129,12 +169,56 @@ export function listImportSpecifiers(
   return scanImportSpecifiers(source, options).specifiers.map((match) => match.specifier);
 }
 
+export function getPackageNameFromSpecifier(specifier: string): string | undefined {
+  if (!isBarePackageSpecifier(specifier)) {
+    return undefined;
+  }
+
+  if (specifier.startsWith("@")) {
+    const [scope, name] = specifier.split("/");
+    return scope && name ? `${scope}/${name}` : undefined;
+  }
+
+  return specifier.split("/")[0];
+}
+
+export function listPackageSpecifiers(
+  source: string,
+  options: ListPackageSpecifiersOptions = {}
+): string[] {
+  const includeNodeBuiltins = options.includeNodeBuiltins ?? false;
+  const seen = new Set<string>();
+
+  for (const specifier of listImportSpecifiers(source, options)) {
+    if (!includeNodeBuiltins && (specifier.startsWith("node:") || NODE_BUILTINS.has(specifier))) {
+      continue;
+    }
+
+    const packageName = getPackageNameFromSpecifier(specifier);
+    if (packageName) {
+      seen.add(packageName);
+    }
+  }
+
+  return [...seen];
+}
+
 export function hasImportSpecifier(
   source: string,
   specifier: string,
   options: ScanImportSpecifiersOptions = {}
 ): boolean {
   return scanImportSpecifiers(source, options).specifiers.some((match) => match.specifier === specifier);
+}
+
+export function isBarePackageSpecifier(specifier: string): boolean {
+  return (
+    specifier.length > 0 &&
+    !specifier.startsWith(".") &&
+    !specifier.startsWith("/") &&
+    !specifier.startsWith("#") &&
+    !specifier.includes("://")
+  );
 }
 
 function scanImport(state: ScanState, start: number): number {

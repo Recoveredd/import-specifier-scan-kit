@@ -45,8 +45,10 @@ Each match includes:
 
 ```ts
 import {
+  getPackageNameFromSpecifier,
   hasImportSpecifier,
   listImportSpecifiers,
+  listPackageSpecifiers,
   scanImportSpecifiers
 } from "import-specifier-scan-kit";
 
@@ -55,6 +57,18 @@ listImportSpecifiers(`import x from "x";`);
 
 hasImportSpecifier(`const x = require("pkg");`, "pkg");
 // true
+
+listPackageSpecifiers(`
+  import React from "react";
+  import jsx from "react/jsx-runtime";
+  import local from "./local.js";
+  import scoped from "@scope/pkg/subpath";
+  import fs from "node:fs";
+`);
+// ["react", "@scope/pkg"]
+
+getPackageNameFromSpecifier("@scope/pkg/subpath");
+// "@scope/pkg"
 
 scanImportSpecifiers(source, {
   includeRequires: false,
@@ -79,6 +93,8 @@ The scanner does not throw for expected source-shape problems. It returns issues
 The core uses only strings, arrays, objects, regular expressions, and numbers. It does not require `fs`, `path`, `Buffer`, `process`, native modules, or network access.
 
 Multi-line import declarations, side-effect imports, `export ... from`, literal dynamic `import()`, and literal `require()` calls are supported. Non-literal calls are reported as diagnostics.
+
+`listPackageSpecifiers()` is intended for dependency previews and package audits. It returns unique bare package names, strips subpaths such as `react/jsx-runtime` to `react`, keeps scoped packages such as `@scope/pkg/subpath` as `@scope/pkg`, and skips relative paths plus Node builtins by default. Pass `includeNodeBuiltins: true` if you also want `node:fs` or `fs`.
 
 ## Limits
 

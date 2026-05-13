@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  getPackageNameFromSpecifier,
   hasImportSpecifier,
+  isBarePackageSpecifier,
   listImportSpecifiers,
+  listPackageSpecifiers,
   scanImportSpecifiers
 } from "../src/index.js";
 
@@ -104,5 +107,36 @@ describe("scanImportSpecifiers", () => {
   it("exposes a direct presence helper", () => {
     expect(hasImportSpecifier(`import x from "x";`, "x")).toBe(true);
     expect(hasImportSpecifier(`import x from "x";`, "missing")).toBe(false);
+  });
+
+  it("extracts unique package names from bare specifiers", () => {
+    const source = `
+      import React from "react";
+      import jsx from "react/jsx-runtime";
+      import local from "./local.js";
+      import scoped from "@scope/pkg/subpath";
+      import fs from "node:fs";
+      const legacy = require("legacy-package/utils");
+    `;
+
+    expect(listPackageSpecifiers(source)).toEqual([
+      "react",
+      "@scope/pkg",
+      "legacy-package"
+    ]);
+    expect(listPackageSpecifiers(source, { includeNodeBuiltins: true })).toEqual([
+      "react",
+      "@scope/pkg",
+      "node:fs",
+      "legacy-package"
+    ]);
+  });
+
+  it("exposes helpers for package-name normalization", () => {
+    expect(getPackageNameFromSpecifier("react/jsx-runtime")).toBe("react");
+    expect(getPackageNameFromSpecifier("@scope/pkg/subpath")).toBe("@scope/pkg");
+    expect(getPackageNameFromSpecifier("./local")).toBeUndefined();
+    expect(isBarePackageSpecifier("package")).toBe(true);
+    expect(isBarePackageSpecifier("#internal")).toBe(false);
   });
 });
