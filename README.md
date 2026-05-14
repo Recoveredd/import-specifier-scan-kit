@@ -97,11 +97,15 @@ scanImportSpecifiers(source, {
 
 The scanner does not throw for expected source-shape problems. It returns issues such as:
 
+- `not-a-string`
+- `invalid-options`
 - `input-too-large`
 - `unterminated-string`
 - `template-expression-skipped`
 - `nonliteral-dynamic-import`
 - `nonliteral-require`
+
+Invalid `maxLength` runtime values are reported and the default scan limit is used.
 
 ## Browser compatibility
 

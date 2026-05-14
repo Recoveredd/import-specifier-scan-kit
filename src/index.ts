@@ -19,6 +19,8 @@ export interface ImportSpecifierMatch {
 }
 
 export type ImportSpecifierIssueCode =
+  | "not-a-string"
+  | "invalid-options"
   | "input-too-large"
   | "unterminated-string"
   | "template-expression-skipped"
@@ -101,22 +103,34 @@ const NODE_BUILTINS = new Set([
 ]);
 
 export function scanImportSpecifiers(
-  source: string,
+  source: unknown,
   options: ScanImportSpecifiersOptions = {}
 ): ScanImportSpecifiersResult {
-  const resolved = { ...DEFAULT_OPTIONS, ...options };
+  const normalized = normalizeOptions(options);
+  if (typeof source !== "string") {
+    return {
+      specifiers: [],
+      issues: [{
+        code: "not-a-string",
+        message: "Source input must be a string.",
+        start: 0,
+        end: 0
+      }]
+    };
+  }
+
   const state: ScanState = {
     source,
-    options: resolved,
+    options: normalized.options,
     specifiers: [],
-    issues: []
+    issues: [...normalized.issues]
   };
 
-  if (source.length > resolved.maxLength) {
+  if (source.length > normalized.options.maxLength) {
     state.issues.push({
       code: "input-too-large",
-      message: `Input length ${source.length} exceeds maxLength ${resolved.maxLength}.`,
-      start: resolved.maxLength,
+      message: `Input length ${source.length} exceeds maxLength ${normalized.options.maxLength}.`,
+      start: normalized.options.maxLength,
       end: source.length
     });
     return { specifiers: [], issues: state.issues };
@@ -163,7 +177,7 @@ export function scanImportSpecifiers(
 }
 
 export function listImportSpecifiers(
-  source: string,
+  source: unknown,
   options: ScanImportSpecifiersOptions = {}
 ): string[] {
   return scanImportSpecifiers(source, options).specifiers.map((match) => match.specifier);
@@ -183,7 +197,7 @@ export function getPackageNameFromSpecifier(specifier: string): string | undefin
 }
 
 export function listPackageSpecifiers(
-  source: string,
+  source: unknown,
   options: ListPackageSpecifiersOptions = {}
 ): string[] {
   const includeNodeBuiltins = options.includeNodeBuiltins ?? false;
@@ -204,7 +218,7 @@ export function listPackageSpecifiers(
 }
 
 export function hasImportSpecifier(
-  source: string,
+  source: unknown,
   specifier: string,
   options: ScanImportSpecifiersOptions = {}
 ): boolean {
@@ -510,4 +524,30 @@ function startsWord(source: string, start: number, word: string): boolean {
 
 function isIdentifier(char: string | undefined): boolean {
   return char !== undefined && IDENTIFIER.test(char);
+}
+
+function normalizeOptions(options: ScanImportSpecifiersOptions): {
+  options: Required<ScanImportSpecifiersOptions>;
+  issues: ImportSpecifierIssue[];
+} {
+  const issues: ImportSpecifierIssue[] = [];
+  const maxLength = options.maxLength ?? DEFAULT_OPTIONS.maxLength;
+  const validMaxLength = Number.isInteger(maxLength) && maxLength >= 0;
+
+  return {
+    options: {
+      includeRequires: options.includeRequires ?? DEFAULT_OPTIONS.includeRequires,
+      includeDynamicImports: options.includeDynamicImports ?? DEFAULT_OPTIONS.includeDynamicImports,
+      includeExports: options.includeExports ?? DEFAULT_OPTIONS.includeExports,
+      maxLength: validMaxLength ? maxLength : DEFAULT_OPTIONS.maxLength
+    },
+    issues: validMaxLength
+      ? issues
+      : [{
+          code: "invalid-options",
+          message: "maxLength must be an integer greater than or equal to 0.",
+          start: 0,
+          end: 0
+        }]
+  };
 }

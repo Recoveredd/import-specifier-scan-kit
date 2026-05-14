@@ -104,6 +104,36 @@ describe("scanImportSpecifiers", () => {
     ]);
   });
 
+  it("returns a diagnostic for non-string input", () => {
+    const result = scanImportSpecifiers(null);
+
+    expect(result.specifiers).toEqual([]);
+    expect(result.issues).toEqual([
+      {
+        code: "not-a-string",
+        message: "Source input must be a string.",
+        start: 0,
+        end: 0
+      }
+    ]);
+    expect(listImportSpecifiers(null)).toEqual([]);
+    expect(hasImportSpecifier(null, "react")).toBe(false);
+  });
+
+  it("falls back to the default max length for invalid runtime options", () => {
+    const result = scanImportSpecifiers("import x from 'x';", { maxLength: Number.NaN });
+
+    expect(result.issues).toEqual([
+      {
+        code: "invalid-options",
+        message: "maxLength must be an integer greater than or equal to 0.",
+        start: 0,
+        end: 0
+      }
+    ]);
+    expect(result.specifiers.map((match) => match.specifier)).toEqual(["x"]);
+  });
+
   it("exposes a direct presence helper", () => {
     expect(hasImportSpecifier(`import x from "x";`, "x")).toBe(true);
     expect(hasImportSpecifier(`import x from "x";`, "missing")).toBe(false);

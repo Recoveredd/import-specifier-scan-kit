@@ -1,6 +1,6 @@
 {
   "name": "import-specifier-scan-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Scan JavaScript import and require specifiers with spans and lightweight diagnostics.",
   "keywords": [
     "javascript",
