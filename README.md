@@ -1,5 +1,6 @@
 # import-specifier-scan-kit
 
+[![npm version](https://img.shields.io/npm/v/import-specifier-scan-kit.svg)](https://www.npmjs.com/package/import-specifier-scan-kit)
 [![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/Recoveredd/import-specifier-scan-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Recoveredd/import-specifier-scan-kit/actions/workflows/ci.yml)
 
